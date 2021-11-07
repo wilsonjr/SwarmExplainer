@@ -89,7 +89,7 @@ Suppose you want to explain class ``0`` in terms of the feature perturbations:
 
 The code produces the following plot:
 
-.. image:: docs/artwork/iris-iris0.png
+.. image:: docs/artwork/iris-class0.png
 	:alt: Explanations for the class 0
 
 The above visualization shows the particle weights (perturbations) and their correspondent change on the performance of the model.
