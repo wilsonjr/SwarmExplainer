@@ -10,7 +10,7 @@ import seaborn as sns
 
 from tqdm import tqdm
 
-class SwarmImportance():
+class SwarmExplainer():
 
     def __init__(self, max_it, N, m, model, feature_names, n_classes, min_value=0, max_value=10, AC1=2.05, AC2=2.05, 
         Vmin=-1, Vmax=1, arg_best = np.argmax, metric=accuracy_score, init_strategy='ones', k=1, constriction=0.729, verbose=True):
@@ -216,7 +216,7 @@ class SwarmImportance():
 
         return df 
 
-    def plot_importance(self, klass, X, y, plot_execution=False, show_best=False, filepath=None):
+    def plot_importance(self, klass, X, y, plot_execution=True, show_best=True, filepath=None):
         if len(self.class_information) == 0:
             print("Did you fit the data?")
             return None

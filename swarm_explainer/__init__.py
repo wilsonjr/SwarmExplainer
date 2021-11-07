@@ -1,1 +1,1 @@
-from .explainer import SwarmImportance
+from .explainer import SwarmExplainer
