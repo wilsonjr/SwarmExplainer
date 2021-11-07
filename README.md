@@ -1,12 +1,12 @@
 .. -*- mode: rst -*-
 
 |pypi_version|_ |pypi_downloads|_
-<!-- 
+
 .. |pypi_version| image:: https://img.shields.io/pypi/v/swarm-explainer.svg
 .. _pypi_version: https://pypi.python.org/pypi/swarm-explainer/
 
 .. |pypi_downloads| image:: https://pepy.tech/badge/swarm-explainer/month
-.. _pypi_downloads: https://pepy.tech/project/swarm-explainer -->
+.. _pypi_downloads: https://pepy.tech/project/swarm-explainer
 
 =====
 SwarmExplainer
@@ -18,7 +18,7 @@ SwarmExplainer is a model-agnostic technique to explain machine learning results
 Installation
 -----------
 
-You can install SwarmExplainer using pip::
+You can install SwarmExplainer using pip:
 
 .. code:: bash
 
