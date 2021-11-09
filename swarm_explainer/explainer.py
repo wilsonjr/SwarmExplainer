@@ -12,6 +12,9 @@ from tqdm import tqdm
 
 class SwarmExplainer():
 
+    """
+    
+    """
     def __init__(self, max_it, N, m, model, feature_names, n_classes, min_value=0, max_value=10, AC1=2.05, AC2=2.05, 
         Vmin=-1, Vmax=1, arg_best = np.argmax, metric=accuracy_score, init_strategy='ones', k=1, constriction=0.729, verbose=True):
 
@@ -43,6 +46,17 @@ class SwarmExplainer():
 
 
     def fit_transform(self, X, y, strategy='mean'):
+        """
+        Compute explanations
+
+            Parameters:
+            - X (np.array): the test data points
+            - y (np.array): the test labels
+            - strategy (str): strategy to compute feature importance according to the optimization function:
+                                if "mean", it uses all of the perturbing weights
+                                if "best", it uses the best perturbing weight
+        """
+
         self.X = X
         self.y = y
         self.strategy = strategy
@@ -66,24 +80,33 @@ class SwarmExplainer():
 
             if self.verbose:
                 print("Done finding weights!")
+
             self.class_importances.append(threads)
 
             if self.verbose:
                 print("Now computing importances!")
-            self.class_information.append(self.compute_information(threads, self.X, self.y, self.max_value, klass, self.model))
+
+            self.class_information.append(self._compute_information(threads, self.X, self.y, self.max_value, klass, self.model))
 
             if self.verbose:
                 print()
 
-
     def important_features(self, normalized=False, klass=None):
+        """
+        Gets the feature importance 
 
+        Parameters:
+        - normalized (bool): true for normalized [0, 1] importances when klass == None, default False
+        - klass (int): specify the class, default None
+
+        Returns:
+        - dataframe containing feature names and their respective importances
+        """
 
         if klass == None:
 
             aggregated_importance = np.zeros(self.X.shape[1])
             name_features = self.class_information[0].sort_values(by=['names'])['names'].values
-
 
             for k in range(self.n_classes):
 
@@ -94,46 +117,40 @@ class SwarmExplainer():
                 else:
                     values = sorted_df['importances'].values 
 
-                # sorted_indices = np.argsort(sorted_df['importances'].values)[::-1]
-                # values = np.zeros(len(sorted_indices))
-                # for i in range(len(values)):
-                #     print('%d: feature %d (%s) gets %d' % (i, sorted_indices[i], sorted_df['names'][sorted_indices[i]], len(values)-i))
-                #     values[sorted_indices[i]] = len(values)-i
-                # print('class: %d' % (k))
-                # print('values: ')
-                # print(values)
-                # print(sorted_df['names'].values)
-                # print()
-
                 for i, value in enumerate(values):
                     aggregated_importance[i] += value
-            # aggregated_importance = aggregated_importance/self.n_classes
 
-
-
-            df = pd.DataFrame({
-                'names': name_features,
-                'importances': aggregated_importance
-                })
-            
+            df = pd.DataFrame({'names': name_features, 'importances': aggregated_importance})            
             df = df.sort_values(by=['importances'], ascending=False)
             return df
         else:
             return self.class_information[klass]
 
+    def _compute_information(self, particles, X_test, y_test, MAX_VALUE, klass, model):
+        """
+        Computes the feature importances
 
-    def compute_information(self, threads, X_test, y_test, MAX_VALUE, klass, model):
+            Parameters:
+            - particles (list of ParticleImportance): the particles used for computing explanations
+            - X_test (np.array): the test set with data points
+            - y_test (np.array): the test labels
+            - MAX_VALUE (float): the hyperparameter that limits feature importance
+            - klass (int): the class being explained
+            - model (sklearn model): the model being explained            
 
+            Returns:
+            - dataframe containing feature importances in descending order        
+        """
         max_x = -1
         min_x = 100000
-        for i in range(len(threads)):
+        for i in range(len(particles)):
             for feature in range(X_test.shape[1]):
-                max_x = max(max_x, np.max(threads[feature].importances))
-                min_x = min(min_x, np.min(threads[feature].importances))
+                max_x = max(max_x, np.max(particles[feature].importances))
+                min_x = min(min_x, np.min(particles[feature].importances))
 
         mean_w = []
         mean_acc = []
-        for thread in threads:
+        for thread in particles:
             
             importances = thread.feature_importances
             feature = thread.feature
@@ -174,8 +191,6 @@ class SwarmExplainer():
                 elif abs(acc_w1 - acc_wij) == best_acc and abs(1 - w_ij) < best_weight and best_acc != 0.0:
                     best_weight = abs(1 - w_ij)
                     best_acc = abs(acc_w1 - acc_wij)
-
-
             
                 sum_diff_acc += abs(acc_w1 - acc_wij)
                 sum_diff_w += abs(1 - w_ij)
@@ -217,6 +232,18 @@ class SwarmExplainer():
         return df 
 
     def plot_importance(self, klass, X, y, plot_execution=True, show_best=True, filepath=None):
+        """
+        Creates a visualization to interpret results
+
+            Parameters:
+            - klass (int): the class to visualize the explanations
+            - X (np.array): the dataset instances
+            - y (np.array): the labels
+            - plot_execution (bool): if the visualization will encode all epochs, default True
+            - show_best (bool): if the visualization will encode the best particle/weight, default True
+            - filepath (str): to save the representation, default None
+        """
+
         if len(self.class_information) == 0:
             print("Did you fit the data?")
             return None
@@ -262,7 +289,6 @@ class SwarmExplainer():
                 axs[j, 0].spines['bottom'].set_visible(False)
                 axs[j, 0].get_xaxis().set_visible(False)
             
-
             best_acc = 1
             best_weight = 0
 
@@ -270,7 +296,6 @@ class SwarmExplainer():
             best_diff_acc = 0
 
             final_weight = 1
-
             
             for index in range(lines.shape[0]):
                 weights = np.sort(np.unique(lines[index]))
@@ -344,7 +369,7 @@ class SwarmExplainer():
         for k, j in enumerate(ordered_features):
             axs[k, 2].spines['top'].set_visible(False)
             axs[k, 2].spines['right'].set_visible(False)
-            
+
             with sns.axes_style('white'):
                 clrs = ['blue' if (x == df['names'][j]) else 'gray' for x in df['names'].values]
                 ax = sns.barplot(x='names', y='importances', data=df, ax=axs[k, 2], palette=clrs)
@@ -374,7 +399,10 @@ class SwarmExplainer():
 
 
 class ParticleImportance(threading.Thread):
-    def __init__(self, max_it, N, m, model, X, y, klass, min_value, max_value,  AC1, AC2, Vmin, Vmax, feature, arg_best = np.argmax, metric = accuracy_score, init_strategy='ones', k=1, constriction=0.729, verbose=True):
+
+    def __init__(self, max_it, N, m, model, X, y, klass, min_value, max_value, 
+                AC1, AC2, Vmin, Vmax, feature, arg_best = np.argmax, metric = accuracy_score, 
+                init_strategy='ones', k=1, constriction=0.729, verbose=True):
         
         threading.Thread.__init__(self)
         
@@ -404,7 +432,9 @@ class ParticleImportance(threading.Thread):
         self.importances = None
 
     def run(self):
-
+        """
+        Compute explanations for a class
+        """
         self.feature_importances, self.importances = utils.particle_swarm_optimization(self.max_it, self.N, self.m, self.model, 
                                                                                  self.X, self.y, self.klass,
                                                                                  self.min_value, self.max_value, self.AC1, self.AC2, self.Vmin, 
