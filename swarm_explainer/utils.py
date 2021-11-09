@@ -8,7 +8,21 @@ import seaborn as sns
 from sklearn.metrics import accuracy_score
 
 def f(particle, X, y, klass, model, arg_best, metric):
+    """
+    Computes the optimization function 
 
+        Parameters:
+        - particle (float): the weight assumed by a particle
+        - X (np.array): the input dataset
+        - y (np.array): the corresponding training labels
+        - klass (int): the class in which the particles are looking
+        - model (sklearn-based): the model being explained
+        - arg_best (argmax or argmin): the function that specifies which prediction to consider
+        - metric (sklearn-based): the metric used for explanation (e.g., accuracy_score)
+
+        Returns:
+        - float: the differente between the accuracy with and without perturbation (for the specified class)    
+    """
     X_class = particle * X[y == klass].copy()
     
     X_final = np.concatenate((X_class, X[y != klass]), axis=0)
@@ -19,7 +33,17 @@ def f(particle, X, y, klass, model, arg_best, metric):
     return abs(1-metric(y_final, y_predicted)) 
 
 def define_neighbors(N, k):
-    
+    """
+    Defines the neighborhood for each particle of PSO following the ring pattern
+
+        Parameters:
+        - N (int): number of particles
+        - k (int): number of neighbors
+
+        Returns:
+        - np.array (N, k): the indices of k neighbors for each particle (row)    
+    """
+
     neighborhood = np.zeros((N, k*2))
     
     for i in range(N):
