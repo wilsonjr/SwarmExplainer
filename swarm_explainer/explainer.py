@@ -344,12 +344,14 @@ class SwarmExplainer():
         for k, j in enumerate(ordered_features):
             axs[k, 2].spines['top'].set_visible(False)
             axs[k, 2].spines['right'].set_visible(False)
+            
             with sns.axes_style('white'):
                 clrs = ['blue' if (x == df['names'][j]) else 'gray' for x in df['names'].values]
                 ax = sns.barplot(x='names', y='importances', data=df, ax=axs[k, 2], palette=clrs)
                 ax.set_xticks([])
                 ax.set_xlabel('')
                 ax.set_ylabel('')
+
             if k == len(ordered_features)-1:
                 axs[k, 2].set_xlabel('Importance Value')
 
