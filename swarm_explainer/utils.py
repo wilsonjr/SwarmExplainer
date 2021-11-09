@@ -127,6 +127,18 @@ def particle_swarm_optimization(max_it, N, m, model, X, y, klass,
 
 
 def extract_weights(importances, feature):
+    """
+    Gets the importance values for a specific feature
+
+        Parameters:
+        - importances (np.array): 3-dimensional array containing the importances for each epoch
+                                  associated to the features and particles
+        - feature (int): the index of the feature 
+
+        Returns:
+        - np.array: matrix containing the importance for each epoch and feature
+    
+    """
     lines = np.zeros((importances.shape[1], importances.shape[0]))
     
     for i in range(importances.shape[1]):        
@@ -137,7 +149,7 @@ def extract_weights(importances, feature):
 
 
 def show_importance_lines(threads, n_features, feature_names, model, X, y, X_test, y_test, klass, MAX_VALUE=10):
-
+    
     max_x = -1
     min_x = 100000
     for i in range(len(threads)):
