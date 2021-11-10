@@ -12,12 +12,76 @@ from tqdm import tqdm
 
 class SwarmExplainer():
 
-    """
+    """Model-agnostic explanations using feature perturbations
+
+    Uses PSO algorithm to compute perturbing weights and build a visualization
+    for explanations.
+
+    Parameters
+    ----------
+    max_it: int
+        The number of epochs to run the algorithm. In general, values should
+        be between 30 and 100.
+
+    N: int
+        The number of particles using in the optimization. Values should be
+        between 5 and 15.
+
+    m: int
+        The number of features of the dataset.
     
+    model: sklearn-based classifier
+        The model to be explained.
+    
+    feature_names: list
+        A list of strs containing the feature names.
+
+    n_classes: int
+        The number of classes.
+
+    min_value: float (default 0)
+        The minimum value assumed by the perturbing weights.
+    
+    max_value: float (default 10)
+        The maximum value assumed by the perturbing weights.
+    
+    AC1: float (default 2.05)
+        Limit in which samples will be drawn to update the 
+        position of particles based on its current position.
+
+    AC2: float (default 2.05)
+        Limit in which samples will be drawn to update the 
+        position of particles based on the current position of
+        its most similar neighbor.
+
+    V1: float (default -1)
+        Minimum velocity of the particles.
+
+    V2: float (default 1)
+        Maximum velocity of the particles.
+
+    arg_best: function (default np.argmax)
+        The function specifying the best element according to the metric.
+
+    metric: function (default accuracy_score)
+        A function that returns a scalar representing the performance of the model.
+
+    init_strategy: str (default 'ones')
+        The weights initialization strategy.
+        If 'ones', all weights will be initialized as 1.
+        If 'random', all weights will be initialized as random numbers between 0.8 and 1.2.
+
+    k: int (default 1)
+        The size of neighborhood for each particle (weight).
+
+    constriction: float (default 0.729)
+        A factor that limits the overall particle velocity.
+
+    verbose: bool (default True)
+        Controls the verbosity of the process.
     """
     def __init__(self, max_it, N, m, model, feature_names, n_classes, min_value=0, max_value=10, AC1=2.05, AC2=2.05, 
         Vmin=-1, Vmax=1, arg_best = np.argmax, metric=accuracy_score, init_strategy='ones', k=1, constriction=0.729, verbose=True):
-
 
         self.max_it = max_it
         self.N = N
@@ -46,15 +110,20 @@ class SwarmExplainer():
 
 
     def fit_transform(self, X, y, strategy='mean'):
-        """
-        Compute explanations
+        """Compute explanations
 
-            Parameters:
-            - X (np.array): the test data points
-            - y (np.array): the test labels
-            - strategy (str): strategy to compute feature importance according to the optimization function:
-                                if "mean", it uses all of the perturbing weights
-                                if "best", it uses the best perturbing weight
+        Parameters
+        ----------        
+        X: array (n samples, m dimensions)
+            The test data.
+        
+        y: array (n samples)
+            The test labels.
+
+        strategy: str (default 'mean') 
+            Strategy to compute feature importance according to the optimization function.
+            If "mean", it uses all of the perturbing weights.
+            If "best", it uses the best perturbing weight.
         """
 
         self.X = X
@@ -92,15 +161,20 @@ class SwarmExplainer():
                 print()
 
     def important_features(self, normalized=False, klass=None):
-        """
-        Gets the feature importance 
+        """Gets the feature importance 
 
-        Parameters:
-        - normalized (bool): true for normalized [0, 1] importances when klass == None, default False
-        - klass (int): specify the class, default None
+        Parameters
+        ----------
+        normalized: bool (default False)
+            True for normalized [0, 1] importances when klass == None.
+            False for non-normalized importances.
 
-        Returns:
-        - dataframe containing feature names and their respective importances
+        klass: int (default None) 
+            When retrieving importances for a specific class.
+
+        Returns
+        -------
+        dataframe containing feature names and their respective importances
         """
 
         if klass == None:
@@ -127,19 +201,32 @@ class SwarmExplainer():
             return self.class_information[klass]
 
     def _compute_information(self, particles, X_test, y_test, MAX_VALUE, klass, model):
-        """
-        Computes the feature importances
+        """Computes the feature importances
 
-            Parameters:
-            - particles (list of ParticleImportance): the particles used for computing explanations
-            - X_test (np.array): the test set with data points
-            - y_test (np.array): the test labels
-            - MAX_VALUE (float): the hyperparameter that limits feature importance
-            - klass (int): the class being explained
-            - model (sklearn model): the model being explained            
+        Parameters
+        ----------
+        particles: list
+            The list of ParticleImportance used for computing explanations.
 
-            Returns:
-            - dataframe containing feature importances in descending order        
+        X_test: array
+            The test set with data points.
+
+        y_test: array
+            The test labels.
+
+        MAX_VALUE: float
+            The hyperparameter that limits feature importance.
+
+        klass: int
+            The class being explained.
+
+        model: sklearn classifier
+            The model being explained.
+
+
+        Returns
+        -------
+        dataframe containing feature importances in descending order        
         """
         max_x = -1
         min_x = 100000
@@ -232,16 +319,27 @@ class SwarmExplainer():
         return df 
 
     def plot_importance(self, klass, X, y, plot_execution=True, show_best=True, filepath=None):
-        """
-        Creates a visualization to interpret results
+        """Creates a visualization to interpret results
 
-            Parameters:
-            - klass (int): the class to visualize the explanations
-            - X (np.array): the dataset instances
-            - y (np.array): the labels
-            - plot_execution (bool): if the visualization will encode all epochs, default True
-            - show_best (bool): if the visualization will encode the best particle/weight, default True
-            - filepath (str): to save the representation, default None
+        Parameters
+        ----------
+        klass: int
+            The class to visualize the explanations.
+
+        X: array
+            The dataset instances.
+
+        y: array 
+            The labels.
+
+        plot_execution: bool (default True) 
+            If the visualization will encode all epochs.
+
+        show_best: bool (default True) 
+            If the visualization will encode the best particle/weight.
+
+        filepath: str (default None): 
+            To save the representation.
         """
 
         if len(self.class_information) == 0:
@@ -274,9 +372,9 @@ class SwarmExplainer():
             lines = None 
 
             if not plot_execution:
-                lines = utils.extract_weights(np.array([swarmImportance.importances[-1]]), feature)
+                lines = utils._extract_weights(np.array([swarmImportance.importances[-1]]), feature)
             else:
-                lines = utils.extract_weights(swarmImportance.importances, feature)
+                lines = utils._extract_weights(swarmImportance.importances, feature)
             
             axs[j, 0].spines['top'].set_visible(False)
             axs[j, 0].spines['left'].set_visible(False)
@@ -399,7 +497,79 @@ class SwarmExplainer():
 
 
 class ParticleImportance(threading.Thread):
+    """ParticleImportance
 
+    Uses PSO algorithm to compute perturbing weights for a specific class.
+
+    Parameters
+    ----------
+    max_it: int
+        The number of epochs to run the algorithm. In general, values should
+        be between 30 and 100.
+
+    N: int
+        The number of particles using in the optimization. Values should be
+        between 5 and 15.
+
+    m: int
+        The number of features of the dataset.
+    
+    model: sklearn-based classifier
+        The model to be explained.
+
+    X: array (n samples, m dimensions)
+        The test dataset.
+    
+    y: array (n samples)
+        The test labels.
+
+    klass: int
+        The class to be explained.
+
+    min_value: float (default 0)
+        The minimum value assumed by the perturbing weights.
+    
+    max_value: float (default 10)
+        The maximum value assumed by the perturbing weights.
+    
+    AC1: float (default 2.05)
+        Limit in which samples will be drawn to update the 
+        position of particles based on its current position.
+
+    AC2: float (default 2.05)
+        Limit in which samples will be drawn to update the 
+        position of particles based on the current position of
+        its most similar neighbor.
+
+    Vmin: float (default -1)
+        Minimum velocity of the particles.
+
+    Vmax: float (default 1)
+        Maximum velocity of the particles.
+
+    feature: int
+        The feature to be explained.
+
+    arg_best: function (default np.argmax)
+        The function specifying the best element according to the metric.
+
+    metric: function (default accuracy_score)
+        A function that returns a scalar representing the performance of the model.
+
+    init_strategy: str (default 'ones')
+        The weights initialization strategy.
+        If 'ones', all weights will be initialized as 1.
+        If 'random', all weights will be initialized as random numbers between 0.8 and 1.2.
+
+    k: int (default 1)
+        The size of neighborhood for each particle (weight).
+
+    constriction: float (default 0.729)
+        A factor that limits the overall particle velocity.
+
+    verbose: bool (default True)
+        Controls the verbosity of the process.
+    """
     def __init__(self, max_it, N, m, model, X, y, klass, min_value, max_value, 
                 AC1, AC2, Vmin, Vmax, feature, arg_best = np.argmax, metric = accuracy_score, 
                 init_strategy='ones', k=1, constriction=0.729, verbose=True):
@@ -432,10 +602,9 @@ class ParticleImportance(threading.Thread):
         self.importances = None
 
     def run(self):
+        """Computes explanations for a pair of (class, feature)        
         """
-        Compute explanations for a class
-        """
-        self.feature_importances, self.importances = utils.particle_swarm_optimization(self.max_it, self.N, self.m, self.model, 
+        self.feature_importances, self.importances = utils._particle_swarm_optimization(self.max_it, self.N, self.m, self.model, 
                                                                                  self.X, self.y, self.klass,
                                                                                  self.min_value, self.max_value, self.AC1, self.AC2, self.Vmin, 
                                                                                  self.Vmax, self.feature, self.arg_best, self.metric, self.init_strategy, 

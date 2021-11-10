@@ -7,22 +7,38 @@ import seaborn as sns
 
 from sklearn.metrics import accuracy_score
 
-def f(particle, X, y, klass, model, arg_best, metric):
-    """
-    Computes the optimization function 
+def _optim_function(particle, X, y, klass, model, arg_best, metric):
+    """Computes the optimization function 
 
-        Parameters:
-        - particle (float): the weight assumed by a particle
-        - X (np.array): the input dataset
-        - y (np.array): the corresponding training labels
-        - klass (int): the class in which the particles are looking
-        - model (sklearn-based): the model being explained
-        - arg_best (argmax or argmin): the function that specifies which prediction to consider
-        - metric (sklearn-based): the metric used for explanation (e.g., accuracy_score)
+    Parameters
+    ----------
+    particle: float
+        The weight assumed by the particle.
+    
+    X: array (n samples, m dimensions)
+        The input dataset.
 
-        Returns:
-        - float: the differente between the accuracy with and without perturbation (for the specified class)    
+    y: array (n samples) 
+        The test labels.
+
+    klass: int
+        The class in which the particles are looking.
+
+    model: sklearn classifier
+        The model being explained.
+
+    arg_best: function (np.argmax or np.argmin)
+
+        The function that specifies which prediction to consider.
+
+    metric: function (sklearn-based classification metric)
+        The metric used for explanation (e.g., accuracy_score).
+
+    Returns
+    -------
+    float, the differente between the accuracy with and without perturbation (for the specified class)    
     """
+
     X_class = particle * X[y == klass].copy()
     
     X_final = np.concatenate((X_class, X[y != klass]), axis=0)
@@ -32,16 +48,21 @@ def f(particle, X, y, klass, model, arg_best, metric):
 
     return abs(1-metric(y_final, y_predicted)) 
 
-def define_neighbors(N, k):
-    """
-    Defines the neighborhood for each particle of PSO following the ring pattern
+def _define_neighbors(N, k):
+    """Defines the neighborhood for each particle of PSO following the ring pattern
 
-        Parameters:
-        - N (int): number of particles
-        - k (int): number of neighbors
+    Parameters
+    ----------
+    N: int
+        Number of particles.
 
-        Returns:
-        - np.array (N, k): the indices of k neighbors for each particle (row)    
+    k: int 
+        Size of neighborhood.
+
+    Returns
+    -------
+    array (N particles, k neighbors)
+        The indices of k neighbors for each particle (row).
     """
 
     neighborhood = np.zeros((N, k*2))
@@ -58,10 +79,81 @@ def define_neighbors(N, k):
     # TODO use set so the neighbors are not duplicated
     return neighborhood
 
-def particle_swarm_optimization(max_it, N, m, model, X, y, klass,
+def _particle_swarm_optimization(max_it, N, m, model, X, y, klass,
                                 min_value, max_value, 
                                 AC1, AC2, Vmin, Vmax, feature, arg_best, metric=accuracy_score, init_strategy='ones', k=1, 
                                 constriction=0.729, verbose=True):
+    """Computes the perturbing weights for a pair (class, dimenion).
+    
+    Parameters
+    ----------
+    max_it: int
+        The number of epochs to run the algorithm. In general, values should
+        be between 30 and 100.
+
+    N: int
+        The number of particles using in the optimization. Values should be
+        between 5 and 15.
+
+    m: int
+        The number of features of the dataset.
+    
+    model: sklearn-based classifier
+        The model to be explained.
+
+    X: array (n samples, m dimensions)
+        The test dataset.
+    
+    y: array (n samples)
+        The test labels.
+
+    klass: int
+        The class to be explained.
+
+    min_value: float (default 0)
+        The minimum value assumed by the perturbing weights.
+    
+    max_value: float (default 10)
+        The maximum value assumed by the perturbing weights.
+    
+    AC1: float (default 2.05)
+        Limit in which samples will be drawn to update the 
+        position of particles based on its current position.
+
+    AC2: float (default 2.05)
+        Limit in which samples will be drawn to update the 
+        position of particles based on the current position of
+        its most similar neighbor.
+
+    Vmin: float (default -1)
+        Minimum velocity of the particles.
+
+    Vmax: float (default 1)
+        Maximum velocity of the particles.
+
+    feature: int
+        The feature to be explained.
+
+    arg_best: function (default np.argmax)
+        The function specifying the best element according to the metric.
+
+    metric: function (default accuracy_score)
+        A function that returns a scalar representing the performance of the model.
+
+    init_strategy: str (default 'ones')
+        The weights initialization strategy.
+        If 'ones', all weights will be initialized as 1.
+        If 'random', all weights will be initialized as random numbers between 0.8 and 1.2.
+
+    k: int (default 1)
+        The size of neighborhood for each particle (weight).
+
+    constriction: float (default 0.729)
+        A factor that limits the overall particle velocity.
+
+    verbose: bool (default True)
+        Controls the verbosity of the process.
+    """
     x = None
 
     # TODO use a design pattern
@@ -75,7 +167,7 @@ def particle_swarm_optimization(max_it, N, m, model, X, y, klass,
     p = x.copy()
     v = np.random.uniform(Vmin, Vmax, (N, m))
     
-    neighborhood = define_neighbors(N, k)
+    neighborhood = _define_neighbors(N, k)
     epoch = 0
     
     importances = []
@@ -96,9 +188,9 @@ def particle_swarm_optimization(max_it, N, m, model, X, y, klass,
         
         for i in range(N):
             
-            if (f(x[i], X, y, klass, model, arg_best, metric) > f(p[i], X, y, klass, model, arg_best, metric)) or \
-               (f(x[i], X, y, klass, model, arg_best, metric) != 0.0 and \
-                f(x[i], X, y, klass, model, arg_best, metric) == f(p[i], X, y, klass, model, arg_best, metric) and \
+            if (_optim_function(x[i], X, y, klass, model, arg_best, metric) > _optim_function(p[i], X, y, klass, model, arg_best, metric)) or \
+               (_optim_function(x[i], X, y, klass, model, arg_best, metric) != 0.0 and \
+                _optim_function(x[i], X, y, klass, model, arg_best, metric) == _optim_function(p[i], X, y, klass, model, arg_best, metric) and \
                 math.sqrt((1.0 - x[i][feature])**2.0) < math.sqrt((1.0 - p[i][feature])**2.0)):
             
                 p[i] = x[i].copy()
@@ -107,14 +199,14 @@ def particle_swarm_optimization(max_it, N, m, model, X, y, klass,
             
             for j in neighborhood[i]:
                 j = int(j)
-                if (f(p[j], X, y, klass, model, arg_best, metric) > f(p[g], X, y, klass, model, arg_best, metric)) or \
-                   (f(p[j], X, y, klass, model, arg_best, metric) != 0.0 and \
-                    f(p[j], X, y, klass, model, arg_best, metric) == f(p[g], X, y, klass, model, arg_best, metric) and \
+                if (_optim_function(p[j], X, y, klass, model, arg_best, metric) > _optim_function(p[g], X, y, klass, model, arg_best, metric)) or \
+                   (_optim_function(p[j], X, y, klass, model, arg_best, metric) != 0.0 and \
+                    _optim_function(p[j], X, y, klass, model, arg_best, metric) == _optim_function(p[g], X, y, klass, model, arg_best, metric) and \
                     math.sqrt((1.0 - p[j][feature])**2.0) < math.sqrt((1.0 - p[g][feature])**2.0 )):
                     g = j
                     
-            fi_1 = np.random.uniform(0, AC1, m) #random_vector(m, AC1)
-            fi_2 = np.random.uniform(0, AC2, m) #random_vector(m, AC2)
+            fi_1 = np.random.uniform(0, AC1, m) 
+            fi_2 = np.random.uniform(0, AC2, m)
                     
             v[i] = constriction*(v[i] + fi_1 * (p[i]-x[i]) + fi_2 * (p[g]-x[i]))
             v[i] = np.clip(v[i], Vmin, Vmax)
@@ -126,18 +218,21 @@ def particle_swarm_optimization(max_it, N, m, model, X, y, klass,
     return p, importances
 
 
-def extract_weights(importances, feature):
-    """
-    Gets the importance values for a specific feature
+def _extract_weights(importances, feature):
+    """Gets the importance values for a specific feature
 
-        Parameters:
-        - importances (np.array): 3-dimensional array containing the importances for each epoch
-                                  associated to the features and particles
-        - feature (int): the index of the feature 
+    Parameters  
+    ----------
+    importances: array (N particles, m features, max_it iterations)
+        3-dimensional array containing the importances for each epoch
+        associated to the features and particles.
 
-        Returns:
-        - np.array: matrix containing the importance for each epoch and feature
-    
+    feature: int
+        The index of the feature.
+
+    Returns
+    -------
+    array, matrix containing the importance for each epoch and feature.    
     """
     lines = np.zeros((importances.shape[1], importances.shape[0]))
     
