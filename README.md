@@ -39,6 +39,9 @@ In its current version, SwarmExplainer handles sklearn-based classification mode
     iris = load_iris()
     X, y = iris.data, iris.target
     feature_names = iris.feature_names
+
+    # preprocess the dataset so feature perturbation will take effect
+    X = swarm_explainer.preprocess(X)
    
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
     model = LogisticRegression()
@@ -73,7 +76,7 @@ Although there are other few parameters you can tune, to explain a model using S
 
 -  ``n_classes``: The number of classes;
 
-- ```verbose``: Controls the verbosity of the technique.
+-  ``verbose``: Controls the verbosity of the technique.
 
 
 **Interpreting the results**
@@ -114,8 +117,6 @@ To retrieve a numerical representation of the feature importance, SwarmExplainer
 
 
 There is a complete example in the *notebooks/* folder.
-
-
 
 
 
