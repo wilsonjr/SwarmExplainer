@@ -615,3 +615,22 @@ class ParticleImportance(threading.Thread):
 
         self.importances = np.array(self.importances)
 
+def preprocess(X):
+    """Process dataset so the perturbations affect the features
+
+    Parameters
+    ----------
+    X: array (n points, m features)
+        The input dataset.
+
+    Returned
+    --------
+    A non-negative array of dimensions (n points, m features).
+    
+    """
+    min_value = np.min(X)
+    if min_value < 0.0:
+        X = X + abs(min_value) 
+
+    #to ensure that the feature perturbations will affect all of the dataset.
+    return X+0.0001
