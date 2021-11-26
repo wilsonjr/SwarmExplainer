@@ -7,6 +7,26 @@ import seaborn as sns
 
 from sklearn.metrics import accuracy_score
 
+def preprocess(X):
+    """Process dataset so the perturbations affect the features
+
+    Parameters
+    ----------
+    X: array (n points, m features)
+        The input dataset.
+
+    Returned
+    --------
+    A non-negative array of dimensions (n points, m features).
+    
+    """
+    min_value = np.min(X)
+    if min_value < 0.0:
+        X = X + abs(min_value) 
+
+    #to ensure that the feature perturbations will affect all of the dataset.
+    return X+0.0001
+
 def _optim_function(particle, X, y, klass, model, arg_best, metric):
     """Computes the optimization function 
 
