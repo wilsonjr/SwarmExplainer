@@ -41,7 +41,7 @@ In its current version, SwarmExplainer handles sklearn-based classification mode
     feature_names = iris.feature_names
 
     # preprocess the dataset so feature perturbation will take effect
-    X = swarm_explainer.explainer.preprocess(X)
+    X = swarm_explainer.utils.preprocess(X)
    
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
     model = LogisticRegression()
@@ -148,8 +148,5 @@ License
 -------
 
 SwarmExplainer follows the 3-clause BSD license.
-
-......
-
 
 

@@ -8,7 +8,7 @@ from setuptools import setup
 
 __version__ = "0.0.1"
 
-with open('README.md', 'r') as f:
+with open('README.md', 'r', encoding='utf8') as f:
 	long_description = f.read()
 
 setup(
